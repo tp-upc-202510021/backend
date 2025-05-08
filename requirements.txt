@@ -1,0 +1,30 @@
+Django==5.2
+djangorestframework==3.16.0
+djangorestframework_simplejwt==5.5.0
+django-cors-headers==4.7.0
+python-decouple==3.8
+sqlparse==0.5.3
+pytz==2024.1
+tzdata==2024.1
+asgiref==3.8.1
+mysqlclient==2.2.7
+
+# IA - Google Gemini
+google-auth==2.39.0
+google-genai==1.11.0
+cachetools==5.5.2
+rsa==4.9.1
+pyasn1==0.6.1
+pyasn1_modules==0.4.2
+urllib3==2.2.2
+requests==2.32.3
+certifi==2024.7.4
+idna==3.7
+charset-normalizer==3.3.2
+
+# Extras útiles (opcional)
+pandas==2.2.2
+openpyxl==3.1.5
+numpy==2.0.1
+python-dateutil==2.9.0.post0
+packaging==24.1
