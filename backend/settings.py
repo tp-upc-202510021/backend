@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-s_aqn%(c+=nt)b%k!xu-x#xhv0av2rm))^z1jk^@*z3o@)vjx8
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    os.getenv("BACKEND_RAILWAY"), 
+    config("BACKEND_RAILWAY_HOST"),
     'localhost',
     '127.0.0.1',
 ]
@@ -63,7 +63,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://10.0.2.2:8000", 
-    os.getenv("BACKEND_RAILWAY"),
+    config("BACKEND_RAILWAY_ORIGIN"),
 ]
 
 
