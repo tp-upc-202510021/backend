@@ -1,10 +1,11 @@
 import json
 import re
 from google import genai
+from diagnostics.models import Diagnostic
 from diagnostics.services import get_user_level
 from decouple import config
 from learningmodules.models import LearningModule
-
+from django.core.exceptions import ObjectDoesNotExist
 client = genai.Client(api_key=config("GEMINI_API_KEY"))
 base_prompt = """Actúa como un educador financiero práctico y conciso, especializado en el mercado peruano. Tu misión es diseñar una ruta de aprendizaje altamente enfocada para un usuario en Perú.
 
@@ -99,3 +100,39 @@ def create_modules_from_gemini(user_id, learning_path_id):
             "order_index": obj.order_index
         })
     return created_modules
+
+def generate_module_content(user_id, module_id):
+    try:
+        diagnostic = Diagnostic.objects.get(user_id=user_id)
+        user_level = diagnostic.level
+        module = LearningModule.objects.get(id=module_id)
+        generate_content_prompt = f"""
+Eres un educador financiero directo y práctico, especializado en el contexto peruano. A partir del TÍTULO y la DESCRIPCIÓN de un módulo, debes generar el **contenido completo** de dicho módulo en **Markdown**.  
+Requisitos estrictos de salida:  
+1. Devuelve **solo** el contenido en Markdown, SIN encabezados tipo “¡Listo!” ni introducciones/despedidas.  
+2. Empieza directamente con un encabezado H1 (`#`) que sea el mismo TÍTULO.  
+3. Organiza la explicación con subtítulos H2/H3, viñetas y párrafos claros.  
+4. Ejemplifica con casos del sistema financiero peruano (SBS, TCEA, bancos, etc.).  
+5. Adapta profundidad y vocabulario al nivel del usuario: {user_level}.  
+6. No incluyas código, JSON, ni comentarios fuera del contenido.  
+
+Datos del módulo:
+Título: {module.title}  
+Descripción: {module.description}
+"""
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-preview-05-20",
+            contents=generate_content_prompt,
+        )
+        content=response.text.strip()
+
+        module.content = content
+        module.save()
+        return {
+            "module_id": module.id,
+            "content": content
+        }
+    except ObjectDoesNotExist as e:
+        return {"error": f"No se encontró: {str(e)}"}
+    except Exception as e:
+        return {"error": f"Error al generar contenido: {str(e)}"}
