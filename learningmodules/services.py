@@ -28,6 +28,7 @@ Basado en el **Objetivo Principal de Aprendizaje y el Perfil y Objetivos Especí
 * `description` (string): Una descripción detallada del contenido y propósito del módulo. Debe centrarse en los conocimientos prácticos y esenciales que el usuario necesita según su perfil y objetivo principal, mencionando aspectos clave para Perú.
 * `level` (string): El nivel de dificultad del módulo, adaptado al punto de partida del usuario (ejemplos: 'Introductorio', 'Esencial', 'Intermedio Básico') (máximo 20 caracteres).
 * `order_index` (integer): El orden secuencial del módulo, comenzando desde 1. Este campo es crucial para determinar el orden en que se deben presentar los módulos.
+* `is_blocked` (boolean): Si el módulo está bloqueado o no. El primer módulo (`order_index` igual a 1) debe tener `is_blocked: false`, y todos los demás módulos deben tener `is_blocked: true`.
 
 Importante: NO incluyas el campo `content` dentro de los objetos de los módulos por ahora.
 
@@ -42,13 +43,15 @@ Ejemplo de la estructura JSON esperada (el contenido real lo generarás tú, ada
       \"title\": \"[Título específico para el enfoque y perfil del usuario]\",
       \"description\": \"[Descripción detallada, práctica y enfocada en lo esencial para el usuario en Perú, según su diagnóstico y el tema principal]\",
       \"level\": \"[Nivel adaptado]\",
-      \"order_index\": 1
+      \"order_index\": 1,
+      \"is_blocked\": false
     },
     {
       \"title\": \"[Siguiente título lógico]\",
       \"description\": \"[Continuación del aprendizaje práctico]\",
       \"level\": \"[Nivel adaptado progresivo]\",
-      \"order_index\": 2
+      \"order_index\": 2,
+      \"is_blocked\": true
     }
     // ... más módulos si son necesarios para cubrir lo esencial del perfil
   ]
@@ -136,3 +139,19 @@ Descripción: {module.description}
         return {"error": f"No se encontró: {str(e)}"}
     except Exception as e:
         return {"error": f"Error al generar contenido: {str(e)}"}
+    
+def get_learning_module_by_id(module_id):
+    try:
+        module = LearningModule.objects.get(id=module_id)
+    except LearningModule.DoesNotExist:
+        raise ValueError(f"No se encontró ningún módulo con el ID {module_id}")
+
+    return {
+        "id": module.id,
+        "title": module.title,
+        "description": module.description,
+        "level": module.level,
+        "order_index": module.order_index,
+        "is_blocked": module.is_blocked,
+        "content": module.content,
+    }
