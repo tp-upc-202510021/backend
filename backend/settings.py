@@ -32,6 +32,7 @@ ALLOWED_HOSTS = [
     config("BACKEND_RAILWAY_HOST"),
     'localhost',
     '127.0.0.1',
+    '10.0.2.2'
 ]
 #
 
