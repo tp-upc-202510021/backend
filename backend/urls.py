@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/diagnostics/', include('diagnostics.urls')),
     path('api/learningpaths/', include('learningpaths.urls')),
     path('api/learningmodules/', include('learningmodules.urls')),
+    path('api/', include('badges.urls')),
 ]

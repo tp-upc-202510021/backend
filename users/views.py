@@ -1,12 +1,13 @@
 from django.shortcuts import render
 
-# Create your views here.
+from jsonschema import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from users.serializers import LoginSerializer
 from users.serializers import RegisterSerializer
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny,IsAuthenticated
+from .services import get_confirmed_friendships, get_pending_friend_requests_for_user, send_friend_request, respond_to_friend_request
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -30,3 +31,66 @@ class RegisterView(APIView):
                 "preference": user.preference
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class SendFriendRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        receiver_id = request.data.get("receiver_id")
+        try:
+            friendship = send_friend_request(request.user, receiver_id)
+            return Response({
+                "id": friendship.id,
+                "status": friendship.status,
+                "receiver_id": friendship.receiver_id
+            }, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class RespondFriendRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, friendship_id):
+        action = request.data.get("action")  # debe ser 'accepted' o 'rejected'
+        try:
+            friendship = respond_to_friend_request(request.user, friendship_id, action)
+            return Response({
+                "id": friendship.id,
+                "status": friendship.status
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class PendingFriendRequestsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        pending_requests = get_pending_friend_requests_for_user(request.user)
+        data = []
+
+        for friendship in pending_requests:
+            data.append({
+                "friendship_id": friendship.id,
+                "requester_name": friendship.requester.name
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
+    
+class ConfirmedFriendsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        friendships = get_confirmed_friendships(user)
+
+        data = []
+        for fs in friendships:
+            friend = fs.receiver if fs.requester == user else fs.requester
+            data.append({
+                "friend_id": friend.id,
+                "friend_name": friend.name,
+                "friend_email": friend.email
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
+

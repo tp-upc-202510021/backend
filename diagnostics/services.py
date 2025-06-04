@@ -1,7 +1,9 @@
 from diagnostics.models import Diagnostic
 from django.core.exceptions import ObjectDoesNotExist
 def create_diagnostic(user, validated_data):
-
+    
+    if Diagnostic.objects.filter(user=user).exists():
+        raise ValueError("Ya existe un diagnóstico para este usuario.")
     diagnostic = Diagnostic.objects.create(
         user=user,
         type=validated_data['type'],

@@ -64,6 +64,8 @@ No uses markdown, comillas triples ni texto adicional.
 """
 
 def create_modules_from_gemini(user_id, learning_path_id):
+    if LearningModule.objects.filter(learning_path_id=learning_path_id).exists():
+        raise ValueError("Los módulos para este learning path ya han sido creados.")
     user_level = get_user_level(user_id)
     if not user_level:
         raise ValueError("El usuario no tiene un diagnóstico registrado.")
@@ -109,6 +111,8 @@ def generate_module_content(user_id, module_id):
         diagnostic = Diagnostic.objects.get(user_id=user_id)
         user_level = diagnostic.level
         module = LearningModule.objects.get(id=module_id)
+        if (module.content):
+            raise ValueError("El contenido del módulo ya ha sido generado previamente.")
         generate_content_prompt = f"""
 Eres un educador financiero directo y práctico, especializado en el contexto peruano. A partir del TÍTULO y la DESCRIPCIÓN de un módulo, debes generar el **contenido completo** de dicho módulo en **Markdown**.  
 Requisitos estrictos de salida:  

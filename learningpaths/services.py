@@ -5,6 +5,9 @@ from learningmodules.models import LearningModule
 from datetime import datetime
 
 def create_learning_path_with_modules(user):
+    if LearningPath.objects.filter(user=user).exists():
+        raise ValueError("Ya existe un learning path para este usuario.")
+
     learning_path = LearningPath.objects.create(
         user=user,
         created_at=datetime.now()

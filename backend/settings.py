@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'diagnostics',
     'learningpaths',
     'learningmodules',
+    "badges",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
