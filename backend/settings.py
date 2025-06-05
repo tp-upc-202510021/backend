@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'learningpaths',
     'learningmodules',
     "badges",
+    'quizzes',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
