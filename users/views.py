@@ -7,7 +7,8 @@ from rest_framework import status
 from users.serializers import LoginSerializer
 from users.serializers import RegisterSerializer
 from rest_framework.permissions import AllowAny,IsAuthenticated
-from .services import get_confirmed_friendships, get_pending_friend_requests_for_user, send_friend_request, respond_to_friend_request
+from .services import get_confirmed_friendships, get_pending_friend_requests_for_user, get_user_with_badges, send_friend_request, respond_to_friend_request
+from django.core.exceptions import ObjectDoesNotExist
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -102,4 +103,24 @@ class ConfirmedFriendsView(APIView):
             })
 
         return Response(data, status=status.HTTP_200_OK)
+    
+class CurrentUserWithBadgesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user_data = get_user_with_badges(request.user.id)
+            return Response(user_data, status=status.HTTP_200_OK)
+        except ObjectDoesNotExist:
+            return Response({"detail": "Usuario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+class UserByIdWithBadgesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            user_data = get_user_with_badges(user_id)
+            return Response(user_data, status=status.HTTP_200_OK)
+        except ObjectDoesNotExist:
+            return Response({"detail": "Usuario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 

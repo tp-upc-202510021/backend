@@ -1,6 +1,8 @@
 from .models import UserFriendship, User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from badges.models import UserBadge
+
 def send_friend_request(requester, receiver_id):
     if requester.id == receiver_id:
         raise ValidationError("No puedes enviarte una solicitud de amistad a ti mismo.")
@@ -46,3 +48,34 @@ def get_confirmed_friendships(user):
     ).select_related('requester', 'receiver')
 
     return friendships
+
+
+def get_user_with_badges(user_id):
+    user = User.objects.get(id=user_id)
+    badges = UserBadge.objects.filter(user=user).select_related('badge')
+
+    badge_list = [
+        {
+            "badge_id": ub.badge.id,
+            "name": ub.badge.name,
+            "description": ub.badge.description,
+            "unlock_condition": ub.badge.unlock_condition,
+            "user_description": ub.description,
+            "date_unlocked": ub.date_unlocked
+        }
+        for ub in badges
+    ]
+
+    user_data = {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "age": user.age,
+        "preference": user.preference,
+        "role": user.role,
+        "date_joined": user.date_joined,
+        "badges": badge_list
+    }
+
+    return user_data
+
