@@ -36,6 +36,7 @@ def get_latest_learning_path_with_modules(user_id):
         "created_at": latest_path.created_at.isoformat(),
         "modules": [
             {
+                "id": m.id,
                 "title": m.title,
                 "description": m.description,
                 "level": m.level,
