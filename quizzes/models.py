@@ -7,6 +7,7 @@ from learningmodules.models import LearningModule
 class Quiz(models.Model):
     module = models.ForeignKey(LearningModule, on_delete=models.CASCADE, related_name="quizzes")
     total_questions = models.IntegerField()
+    is_pre_module = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Quiz for Module {self.module.id}"

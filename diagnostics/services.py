@@ -25,3 +25,18 @@ def get_user_level(user_id):
         return None
     except Diagnostic.DoesNotExist:
         return None
+    
+from .models import LearningSection, DiagnosticQuestion
+
+def get_all_learning_sections():
+    """
+    Retorna un queryset con todas las secciones de aprendizaje.
+    """
+    return LearningSection.objects.all()
+
+def get_all_diagnostic_questions():
+    """
+    Retorna un queryset con todas las preguntas de diagnóstico.
+    Incluye una optimización de rendimiento para precargar las respuestas anidadas.
+    """
+    return DiagnosticQuestion.objects.prefetch_related('answers').all()

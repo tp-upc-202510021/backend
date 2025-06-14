@@ -107,42 +107,97 @@ def create_modules_from_gemini(user_id, learning_path_id):
     return created_modules
 
 def generate_module_content(user_id, module_id):
+
     try:
         diagnostic = Diagnostic.objects.get(user_id=user_id)
         user_level = diagnostic.level
         module = LearningModule.objects.get(id=module_id)
-        if (module.content):
-            raise ValueError("El contenido del módulo ya ha sido generado previamente.")
-        generate_content_prompt = f"""
-Eres un educador financiero directo y práctico, especializado en el contexto peruano. A partir del TÍTULO y la DESCRIPCIÓN de un módulo, debes generar el **contenido completo** de dicho módulo en **Markdown**.  
-Requisitos estrictos de salida:  
-1. Devuelve **solo** el contenido en Markdown, SIN encabezados tipo “¡Listo!” ni introducciones/despedidas.  
-2. Empieza directamente con un encabezado H1 (`#`) que sea el mismo TÍTULO.  
-3. Organiza la explicación con subtítulos H2/H3, viñetas y párrafos claros.  
-4. Ejemplifica con casos del sistema financiero peruano (SBS, TCEA, bancos, etc.).  
-5. Adapta profundidad y vocabulario al nivel del usuario: {user_level}.  
-6. No incluyas código, JSON, ni comentarios fuera del contenido.  
 
-Datos del módulo:
-Título: {module.title}  
-Descripción: {module.description}
+
+        generate_content_prompt = f"""
+Actúa como un educador financiero experto y un creador de contenido multimedia, especializado en el mercado peruano.
+
+Tu tarea es generar el contenido completo para un módulo de aprendizaje basándote en su título, descripción y el nivel del usuario. El resultado final debe ser un objeto JSON único y bien formado, sin ningún texto o formato adicional.
+
+**Datos del Módulo de Entrada:**
+- **Título del Módulo:** "{module.title}"
+- **Descripción del Módulo:** "{module.description}"
+- **Nivel del Usuario:** "{user_level}"
+
+**Requisitos Estrictos de Salida:**
+Debes generar un objeto JSON que contenga una única clave principal llamada `pages`. El valor de `pages` debe ser una lista (array) de 3 objetos, en un orden específico.
+
+Cada objeto en la lista debe tener EXACTAMENTE la siguiente estructura: `{{"type": "...", "content": "..."}}`.
+
+**Ejemplo de la Estructura JSON Final (limpio y claro para la IA):**
+{{
+  "pages": [
+    {{
+      "type": "informative",
+      "content": "# Título Teórico\\n\\nExplicación teórica, clara y concisa aquí..."
+    }},
+    {{
+      "type": "practical",
+      "content": "## Ejemplo Práctico\\n\\nUn caso práctico o cálculo simplificado aquí..."
+    }},
+    {{
+      "type": "video",
+      "content": "https://www.youtube.com/watch?v=xxxxxxxxxxx"
+    }}
+  ]
+}}
+
+**Instrucciones para la lista `pages`:**
+Debes generar la lista con 3 elementos en este orden exacto:
+
+1.  **Primer Objeto (Informativo):**
+    -   `type`: Debe ser la cadena de texto `"informative"`.
+    -   `content`: Crea el contenido educativo **TEÓRICO** principal en formato **Markdown**. Debe ser claro, muy conciso, optimizado para 1 pantalla de celular y explicar los conceptos fundamentales del módulo.
+
+2.  **Segundo Objeto (Práctico):**
+    -   `type`: Debe ser la cadena de texto `"practical"`.
+    -   `content`: Proporciona un **ejemplo PRÁCTICO y CONCRETO** en formato **Markdown** relacionado con la teoría. Debe mostrar cómo se aplica el concepto en una situación real del mercado peruano. Debe estar optimizado para 1 pantalla de celular.
+
+3.  **Tercer Objeto (Video):**
+    -   `type`: Debe ser la cadena de texto `"video"`.
+    -   `content`: Busca y proporciona **UN ÚNICO enlace URL** a un video de YouTube relevante. El video debe durar entre 3 y 7 minutos, ser de una fuente confiable, estar disponible y tener un enlace válido.
+
+**¡¡MUY IMPORTANTE!!**
+Tu respuesta debe ser **EXCLUSIVAMENTE el objeto JSON**. No incluyas texto introductorio como "Aquí está el JSON:", despedidas, explicaciones, ni ```json. La salida debe ser el JSON puro para que pueda ser procesado directamente por un programa.
 """
+
+        # 4. Llamar a la API de Gemini
         response = client.models.generate_content(
-            model="gemini-2.5-flash-preview-05-20",
+            model="gemini-2.5-pro-preview-06-05",  # Modelo recomendado, puedes usar el que prefieras
             contents=generate_content_prompt,
         )
-        content=response.text.strip()
+        
+        # 5. Procesar la respuesta para convertirla en un objeto JSON
+        try:
+            # La API puede devolver el texto JSON envuelto en ```json ... ```, lo limpiamos por si acaso
+            clean_response_text = response.text.strip().replace("```json", "").replace("```", "").strip()
+            content_object = json.loads(clean_response_text)
+        except json.JSONDecodeError:
+            # Este error ocurre si la respuesta de la IA no es un JSON válido
+            raise ValueError(f"La respuesta de la API no pudo ser decodificada como JSON. Respuesta recibida: {response.text}")
 
-        module.content = content
+        # 6. Guardar el objeto JSON en la base de datos
+        module.content = content_object  # Django JSONField maneja diccionarios directamente
         module.save()
+
+        # 7. Devolver la respuesta exitosa
         return {
             "module_id": module.id,
-            "content": content
+            "content": content_object
         }
+
     except ObjectDoesNotExist as e:
-        return {"error": f"No se encontró: {str(e)}"}
+        return {"error": f"No se encontró el objeto en la base de datos: {str(e)}"}
+    except ValueError as e: # Captura el error de contenido ya generado o JSON inválido
+        return {"error": str(e)}
     except Exception as e:
-        return {"error": f"Error al generar contenido: {str(e)}"}
+        # Captura cualquier otro error inesperado
+        return {"error": f"Ocurrió un error inesperado al generar contenido: {str(e)}"}
     
 def get_learning_module_by_id(module_id):
     try:

@@ -7,7 +7,7 @@ class LearningModule(models.Model):
     description = models.TextField()
     level = models.CharField(max_length=50)
     order_index = models.PositiveIntegerField()
-    content = models.TextField(blank=True, null=True) 
+    content = models.JSONField(null=True, blank=True) 
     is_blocked = models.BooleanField(default=False)
     def __str__(self):
         return self.title
