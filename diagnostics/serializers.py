@@ -45,3 +45,21 @@ class DiagnosticQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiagnosticQuestion
         fields = ['id', 'text', 'section_block', 'answers']
+
+from rest_framework import serializers
+from .models import Diagnostic
+
+class DiagnosticCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializador para recibir y validar los datos para la creación/actualización 
+    de un Diagnostic.
+    """
+    modules = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=True,
+        help_text="Lista de IDs de los módulos completados, ej: [1, 2, 3]"
+    )
+
+    class Meta:
+        model = Diagnostic
+        fields = ['response_tone', 'motivation', 'modules']

@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from diagnostics.serializers import DiagnosticSerializer,LearningSectionSerializer, DiagnosticQuestionSerializer
+from diagnostics.serializers import DiagnosticCreateSerializer, DiagnosticSerializer,LearningSectionSerializer, DiagnosticQuestionSerializer
 from diagnostics.services import create_diagnostic, get_diagnostics_for_user, get_all_learning_sections, get_all_diagnostic_questions
 from django.core.exceptions import ObjectDoesNotExist
 class DiagnosticCreateView(APIView):
@@ -49,7 +49,7 @@ class LearningSectionListView(generics.ListAPIView):
         return get_all_learning_sections()
 
 
-# --- Vista para obtener TODAS las Preguntas de Diagnóstico ---
+
 
 class DiagnosticQuestionListView(generics.ListAPIView):
     """
@@ -64,5 +64,26 @@ class DiagnosticQuestionListView(generics.ListAPIView):
         y la optimización de la consulta.
         """
         return get_all_diagnostic_questions()
+class DiagnosticCreateAPIView(APIView):
+    """
+    Endpoint para que un usuario cree un nuevo diagnóstico.
+    Siempre crea un nuevo registro, no actualiza los existentes.
+    """
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+
+        serializer = DiagnosticCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        diagnostic = create_diagnostic(
+            user=request.user, 
+            data=serializer.validated_data
+        )
+        response_data = {
+            "message": f"Diagnóstico de '{diagnostic.type}' creado exitosamente.",
+            "diagnostic_id": diagnostic.id
+        }
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
 

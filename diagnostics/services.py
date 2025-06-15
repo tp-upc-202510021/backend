@@ -1,5 +1,8 @@
 from diagnostics.models import Diagnostic
 from django.core.exceptions import ObjectDoesNotExist
+from .models import Diagnostic
+from typing import Dict, Any
+from users.models import User
 def create_diagnostic(user, validated_data):
     
     if Diagnostic.objects.filter(user=user).exists():
@@ -40,3 +43,13 @@ def get_all_diagnostic_questions():
     Incluye una optimización de rendimiento para precargar las respuestas anidadas.
     """
     return DiagnosticQuestion.objects.prefetch_related('answers').all()
+
+def create_diagnostic(*, user: User, data: Dict[str, Any]) -> Diagnostic:
+
+    diagnostic_obj = Diagnostic.objects.create(
+        user=user,
+        type=user.preference,
+        **data
+    )
+    
+    return diagnostic_obj

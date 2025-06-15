@@ -18,9 +18,13 @@ class Diagnostic(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='diagnostics')
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    score = models.PositiveIntegerField()
-    level = models.TextField()
+    score = models.PositiveIntegerField(default=0)
+    level = models.TextField(null=True, blank=True)
     date_taken = models.DateTimeField(auto_now_add=True)
+    response_tone=models.CharField(max_length=100,null=True, blank=True)
+    motivation=models.TextField(
+        help_text="Motivation for taking the diagnostic, e.g., 'I want to improve my financial literacy.'",null=True, blank=True)
+    modules=models.JSONField(default=list,null=True)
 
     def __str__(self):
         return f"Diagnostic for {self.user.email} - {self.type} ({self.level})"
@@ -29,6 +33,11 @@ class LearningSection(models.Model):
     """
     Model to store each section of the loan learning path.
     """
+    PREFERENCE_CHOICES = [
+        ('loans', 'Loans'),
+        ('investments', 'Investments'),
+    ]
+
     id = models.IntegerField(
         primary_key=True,
         help_text="Numeric ID that matches the section number in the learning path."
@@ -42,6 +51,20 @@ class LearningSection(models.Model):
     description = models.TextField(
         help_text="The full description of the section. Supports long text, paragraphs, and special characters for formulas."
     )
+
+    preference = models.CharField(
+        max_length=11,
+        choices=PREFERENCE_CHOICES,
+        null=True,    
+        blank=True,  
+        help_text="The preference this section belongs to, either loans or investments."
+    )
+
+    learning_index = models.PositiveSmallIntegerField(
+        default=0,
+        help_text="An index for ordering the sections within the app."
+    )
+
     def __str__(self):
         return f"{self.id}. {self.title}"
 
@@ -49,6 +72,11 @@ class DiagnosticQuestion(models.Model):
     """
     Almacena una pregunta del cuestionario de diagnóstico.
     """
+    PREFERENCE_CHOICES = [
+        ('loans', 'Loans'),
+        ('investments', 'Investments'),
+    ]
+
     id = models.IntegerField(
         primary_key=True,
         help_text="ID numérico de la pregunta (ej: 1, 2, 3...)"
@@ -59,6 +87,14 @@ class DiagnosticQuestion(models.Model):
     section_block = models.CharField(
         max_length=10,
         help_text="El bloque de secciones que cubre esta pregunta (ej: '1-4')."
+    )
+
+    preference = models.CharField(
+        max_length=11,
+        choices=PREFERENCE_CHOICES,
+        null=True,    
+        blank=True,  
+        help_text="The preference this section belongs to, either loans or investments."
     )
 
     class Meta:
