@@ -21,7 +21,7 @@ class Diagnostic(models.Model):
     score = models.PositiveIntegerField(default=0)
     level = models.TextField(null=True, blank=True)
     date_taken = models.DateTimeField(auto_now_add=True)
-    response_tone=models.CharField(max_length=100,null=True, blank=True)
+    response_tone=models.TextField(null=True, blank=True)
     motivation=models.TextField(
         help_text="Motivation for taking the diagnostic, e.g., 'I want to improve my financial literacy.'",null=True, blank=True)
     modules=models.JSONField(default=list,null=True)
