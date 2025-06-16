@@ -27,4 +27,5 @@ urlpatterns = [
     path('api/learningmodules/', include('learningmodules.urls')),
     path('api/', include('badges.urls')),
     path('api/quizzes/', include('quizzes.urls')),
+    path('api/game/', include('game.urls')),
 ]

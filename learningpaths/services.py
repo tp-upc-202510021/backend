@@ -1,5 +1,5 @@
 from learningpaths.models import LearningPath
-from learningmodules.services import create_modules_from_gemini
+from learningmodules.services import create_learning_modules
 from learningmodules.models import LearningModule
 
 from datetime import datetime
@@ -13,7 +13,7 @@ def create_learning_path_with_modules(user):
         created_at=datetime.now()
     )
 
-    modules = create_modules_from_gemini(user.id, learning_path.id)
+    modules = create_learning_modules(user.id, learning_path.id)
 
     return {
         "learning_path": {
