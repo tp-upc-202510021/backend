@@ -23,6 +23,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='diagnostic',
             name='response_tone',
-            field=models.CharField(blank=True, max_length=100, null=True),
+            field=models.TextField(null=True, blank=True)
         ),
     ]
