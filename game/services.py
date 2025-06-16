@@ -2,6 +2,8 @@ import json
 import re
 from google import genai
 from decouple import config
+import random
+from typing import Tuple, Dict
 
 client = genai.Client(api_key=config("GEMINI_API_KEY"))
 def create_loan_game_investment():
@@ -123,3 +125,31 @@ No incluyas ningún texto fuera del bloque JSON.
         return loan_game_data
     except json.JSONDecodeError as e:
         return {"error": "Error parsing JSON", "raw": json_str, "details": str(e)}
+    
+def evaluate_rate_events(
+    base_rate: float,
+    economic_statement: str,
+    rate_variation: Dict,
+    hidden_event: Dict
+) -> Tuple[str, float, bool, bool]:
+    """
+    Determina qué evento ocurre.
+    Devuelve:
+      message, new_rate, normal_event_occurred, hidden_event_occurred
+    """
+    direction_main = rate_variation.get("direction", "none")
+    prob_main = rate_variation.get("probability", 0) / 100.0
+
+    if direction_main != "none" and random.random() < prob_main:
+        new_rate = rate_variation["new_rate_percentage"]
+        msg = f"El evento anunciado: {economic_statement}. Se cumplió"
+        return msg, new_rate, True, False
+
+    prob_hidden = hidden_event.get("probability", 0) / 100.0
+    if random.random() < prob_hidden:
+        new_rate = hidden_event["new_rate_percentage"]
+        msg = hidden_event["statement"]
+        return msg, new_rate, False, True
+
+    # --- 3) Ningún evento ocurrió ---
+    return "No hubo cambios importantes, se mantiene la tasa", base_rate, False, False
