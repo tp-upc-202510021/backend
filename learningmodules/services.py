@@ -208,5 +208,6 @@ def get_learning_module_by_id(module_id):
         "level": module.level,
         "order_index": module.order_index,
         "is_blocked": module.is_blocked,
+        "is_approved": module.is_approved,
         "content": module.content,
     }
