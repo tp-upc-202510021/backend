@@ -9,5 +9,6 @@ class LearningModule(models.Model):
     order_index = models.PositiveIntegerField()
     content = models.JSONField(null=True, blank=True) 
     is_blocked = models.BooleanField(default=False)
+    is_approved = models.BooleanField(default=False)
     def __str__(self):
         return self.title
