@@ -49,7 +49,7 @@ def create_learning_modules(user_id: int, learning_path_id: int) -> list:
 
  
         recommended_indexes = latest_diagnostic.modules
-        recommended_indexes.push(21,22,23,24,25,26)
+        recommended_indexes.extend([21, 22, 23, 24, 25, 26])
         if not recommended_indexes:
             raise ValueError("El diagnóstico del usuario no contiene módulos recomendados.")
             
