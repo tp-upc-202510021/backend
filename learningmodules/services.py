@@ -161,7 +161,7 @@ Tu respuesta debe ser **EXCLUSIVAMENTE el objeto JSON**. No incluyas texto intro
 
         # 4. Llamar a la API de Gemini
         response = client.models.generate_content(
-            model="gemini-2.5-pro-preview-06-05",  # Modelo recomendado, puedes usar el que prefieras
+            model="gemini-2.5-flash-preview-05-20",  # Modelo recomendado, puedes usar el que prefieras
             contents=generate_content_prompt,
         )
         
