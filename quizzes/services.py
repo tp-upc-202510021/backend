@@ -112,6 +112,11 @@ def create_quiz_result(user, quiz_id, score):
 
     passed = score == 2 
 
+    if passed:
+        module=quiz.module
+        module.is_approved=True
+        module.save()
+
     return {
         "quiz_result_id": result.id,
         "quiz_id": quiz.id,
