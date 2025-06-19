@@ -42,6 +42,7 @@ def get_latest_learning_path_with_modules(user_id):
                 "level": m.level,
                 "order_index": m.order_index,
                 "is_blocked": m.is_blocked,
+                "is_approved": m.is_approved,
             }
             for m in modules
         ]
