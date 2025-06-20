@@ -181,7 +181,7 @@ def invite_user_to_loan_game(inviter: User, invited_user_id: int) -> LoanGameSes
         f"user_{invited_user.id}",
         {
             "type": "game.invitation",
-            "message": f"{inviter.username} te ha invitado a un juego de préstamos.",
+            "message": f"{inviter.name} te ha invitado a un juego de préstamos.",
             "session_id": session.id
         }
     )
@@ -207,7 +207,7 @@ def respond_to_loan_invitation(session_id: int, user: User, response: str) -> di
             f"user_{session.player_1.id}",
             {
                 "type": "game.rejected",
-                "message": f"{user.username} rechazó tu invitación.",
+                "message": f"{user.name} rechazó tu invitación.",
                 "session_id": session.id
             }
         )
@@ -226,7 +226,7 @@ def respond_to_loan_invitation(session_id: int, user: User, response: str) -> di
             f"user_{session.player_1.id}",
             {
                 "type": "game.accepted",
-                "message": f"{user.username} aceptó tu invitación.",
+                "message": f"{user.name} aceptó tu invitación.",
                 "session_id": session.id,
                 "game_data": game_data
             }

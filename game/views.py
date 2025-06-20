@@ -5,6 +5,8 @@ from .services import create_loan_game_investment, evaluate_rate_events, invite_
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 class LoanGameAIView(APIView):
     def get(self, request):
@@ -66,16 +68,19 @@ def invite_to_game_view(request):
     except Exception as e:
         return Response({"error": str(e)}, status=400)
 
+@method_decorator(csrf_exempt, name='dispatch')
+class RespondToGameView(APIView):
+    permission_classes = [IsAuthenticated]
 
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def respond_to_game_view(request, session_id):
-    response = request.data.get("response")  # "accept" o "reject"
-    if response not in ["accept", "reject"]:
-        return Response({"error": "Respuesta inválida. Usa 'accept' o 'reject'"}, status=400)
+    def post(self, request):
+        session_id = request.data.get("session_id")
+        response = request.data.get("response")  # "accept" o "reject"
 
-    try:
-        result = respond_to_loan_invitation(session_id, request.user, response)
-        return Response(result)
-    except Exception as e:
-        return Response({"error": str(e)}, status=400)
+        if not session_id or response not in ["accept", "reject"]:
+            return Response({"error": "Faltan datos o la respuesta es inválida."}, status=400)
+
+        try:
+            result = respond_to_loan_invitation(session_id, request.user, response)
+            return Response(result)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
