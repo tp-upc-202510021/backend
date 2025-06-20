@@ -11,6 +11,8 @@ PyMySQL==1.1.1
 gunicorn==21.2.0
 drf-spectacular==0.28.0
 cryptography>=42.0.0
+channels==4.2.2
+
 # IA - Google Gemini
 google-auth==2.39.0
 google-genai==1.11.0

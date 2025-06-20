@@ -4,6 +4,12 @@ from google import genai
 from decouple import config
 import random
 from typing import Tuple, Dict
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+from game.models import LoanGameSession
+from users.models import User
+from users.services import get_confirmed_friendships
 
 client = genai.Client(api_key=config("GEMINI_API_KEY"))
 def create_loan_game_investment():
@@ -153,3 +159,91 @@ def evaluate_rate_events(
 
     # --- 3) Ningún evento ocurrió ---
     return "No hubo cambios importantes, se mantiene la tasa", base_rate, False, False
+
+def invite_user_to_loan_game(inviter: User, invited_user_id: int) -> LoanGameSession:
+    friendships = get_confirmed_friendships(inviter)
+    friend_ids = [f.requester.id if f.receiver == inviter else f.receiver.id for f in friendships]
+    if invited_user_id not in friend_ids:
+        raise ValueError("El usuario no es tu amigo confirmado")
+
+    invited_user = User.objects.get(id=invited_user_id)
+
+    session = LoanGameSession.objects.create(
+        player_1=inviter,
+        player_2=invited_user,
+        status="waiting"
+    )
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_add)(f"user_{invited_user.id}", f"user_{invited_user.id}")
+
+    async_to_sync(channel_layer.group_send)(
+        f"user_{invited_user.id}",
+        {
+            "type": "game.invitation",
+            "message": f"{inviter.username} te ha invitado a un juego de préstamos.",
+            "session_id": session.id
+        }
+    )
+
+    return session
+
+def respond_to_loan_invitation(session_id: int, user: User, response: str) -> dict:
+    session = LoanGameSession.objects.get(id=session_id)
+
+    if session.player_2 != user:
+        raise PermissionError("No estás autorizado para responder esta invitación")
+
+    if session.status != 'waiting':
+        raise ValueError("Este juego ya fue aceptado o rechazado")
+
+    channel_layer = get_channel_layer()
+
+    if response == 'reject':
+        session.status = 'rejected'
+        session.save()
+
+        async_to_sync(channel_layer.group_send)(
+            f"user_{session.player_1.id}",
+            {
+                "type": "game.rejected",
+                "message": f"{user.username} rechazó tu invitación.",
+                "session_id": session.id
+            }
+        )
+        return {"message": "Invitación rechazada"}
+
+    elif response == 'accept':
+        game_data = create_loan_game_investment()
+        if "error" in game_data:
+            raise ValueError("Error al generar el juego con IA")
+
+        session.status = 'active'
+        session.game_data = game_data
+        session.save()
+
+        async_to_sync(channel_layer.group_send)(
+            f"user_{session.player_1.id}",
+            {
+                "type": "game.accepted",
+                "message": f"{user.username} aceptó tu invitación.",
+                "session_id": session.id,
+                "game_data": game_data
+            }
+        )
+        async_to_sync(channel_layer.group_send)(
+          f"user_{session.player_2.id}",
+          {
+              "type": "game.started",
+              "message": "Has aceptado el reto. El juego ha comenzado.",
+              "session_id": session.id,
+              "game_data": game_data
+          }
+      )
+        return {
+            "message": "Invitación aceptada. Juego iniciado.",
+            "session_id": session.id,
+            "game_data": game_data
+        }
+
+    raise ValueError("Respuesta inválida. Usa 'accept' o 'reject'")
