@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services import create_loan_game_investment, evaluate_rate_events, invite_user_to_loan_game, respond_to_loan_invitation
+from .services import create_loan_game_investment, evaluate_rate_events, invite_user_to_loan_game, respond_to_loan_invitation, save_loan_game_result
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -84,3 +84,40 @@ class RespondToGameView(APIView):
             return Response(result)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+        
+class SaveLoanGameResultView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+
+        player_1_id = data.get("player_1_id")
+        player_2_id = data.get("player_2_id")
+        player_1_result = data.get("player_1_total_interest")
+        player_2_result = data.get("player_2_total_interest")
+        print("player_1_id:", player_1_id)
+        print("player_2_id:", player_2_id)
+        print("player_1_total_interest:", player_1_result)
+        print("player_2_total_interest:", player_2_result)
+        if any(v is None for v in [player_1_id, player_2_id, player_1_result, player_2_result]):
+            return Response({"error": "Faltan datos obligatorios"}, status=400)
+
+        try:
+            game = save_loan_game_result(
+                int(player_1_id),
+                int(player_2_id),
+                float(player_1_result),
+                float(player_2_result)
+            )
+            return Response({
+                "message": "Resultado guardado correctamente",
+                "game_id": game.id,
+                "first_user": game.first_user.name,
+                "second_user": game.second_user.name,
+                "first_user_result": float(game.first_user_result),
+                "second_user_result": float(game.second_user_result)
+            })
+        except ValueError as e:
+            return Response({"error": str(e)}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

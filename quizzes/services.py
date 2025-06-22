@@ -35,24 +35,29 @@ Condiciones:
 ]
 Contenido del módulo(Genera las preguntas en base al contenido del módulo):
 """
+# Recibe el module_id, genera un quiz con 2 preguntas de opción múltiple
 def generate_quizzes_from_gemini(module_id):
+    # Obtiene el módulo de aprendizaje por su ID
     module = LearningModule.objects.get(id=module_id)
     final_prompt = f"{prompt}\n{module.content}"   
     try:
+        # Llama a la API de Gemini para generar el contenido del quiz
         response = client.models.generate_content(
             model="gemini-2.5-flash-preview-05-20",
             contents=final_prompt,
         )
         raw_text = response.text.strip()
+        # Extrae el JSON del texto de respuesta
         match = re.search(r"```json(.*?)```", raw_text, re.DOTALL)
         json_str = match.group(1).strip() if match else raw_text
         questions = json.loads(json_str) 
     except Exception as e:
         print(f"Error al procesar la respuesta de Gemini: {e}")
         raise ValueError("Ocurrió un error procesando la respuesta de Gemini.")
-    
+    # Crea el quiz en la base de datos
     quiz = Quiz.objects.create(module=module, total_questions=len(questions))
 
+    # Itera sobre las preguntas y crea los objetos Question y Answer
     for q in questions:
         question = Question.objects.create(quiz=quiz, text=q["text"])
         for ans in q["answers"]:
@@ -61,7 +66,7 @@ def generate_quizzes_from_gemini(module_id):
                 text=ans["text"],
                 is_correct=ans["is_correct"]
             )
-
+    # Retorna el quiz creado
     return quiz
 def get_latest_quiz_with_questions_and_answers(module_id):
     try:

@@ -45,3 +45,9 @@ automat==25.4.16
 constantly==23.10.4
 service-identity==24.2.0
 pyopenssl==25.1.0
+
+#testing
+pytest==8.4.1
+pytest-django==4.11.1
+pytest-factoryboy==2.7.0
+coverage==7.9.1

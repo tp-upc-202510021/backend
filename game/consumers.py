@@ -22,3 +22,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     async def game_started(self, event):
         await self.send(text_data=json.dumps(event))
+
+    async def send_badge_notification(self, event):
+        await self.send(text_data=json.dumps(event["event"]))
+

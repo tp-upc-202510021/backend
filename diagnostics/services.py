@@ -45,11 +45,12 @@ def get_all_diagnostic_questions():
     return DiagnosticQuestion.objects.prefetch_related('answers').all()
 
 def create_diagnostic(*, user: User, data: Dict[str, Any]) -> Diagnostic:
+    if Diagnostic.objects.filter(user=user).exists():
+        raise ValueError("Ya existe un diagnóstico para este usuario.")
 
     diagnostic_obj = Diagnostic.objects.create(
         user=user,
         type=user.preference,
         **data
     )
-    
     return diagnostic_obj

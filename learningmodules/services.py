@@ -98,6 +98,7 @@ def create_learning_modules(user_id: int, learning_path_id: int) -> list:
     except Exception as e:
         raise ValueError(f"Ocurrió un error inesperado: {str(e)}")
 
+#Recibe el user_id y module_id, genera el contenido del módulo de aprendizaje
 def generate_module_content(user_id, module_id):
 
     try:
@@ -164,13 +165,13 @@ Tu respuesta debe ser **EXCLUSIVAMENTE el objeto JSON**. No incluyas texto intro
 
         # 4. Llamar a la API de Gemini
         response = client.models.generate_content(
-            model="gemini-2.5-pro-preview-06-05",  # Modelo recomendado, puedes usar el que prefieras
+            model="gemini-2.5-pro-preview-06-05", 
             contents=generate_content_prompt,
         )
         
         # 5. Procesar la respuesta para convertirla en un objeto JSON
         try:
-            # La API puede devolver el texto JSON envuelto en ```json ... ```, lo limpiamos por si acaso
+            # La API puede devolver el texto JSON envuelto en ```json ... ```
             clean_response_text = response.text.strip().replace("```json", "").replace("```", "").strip()
             content_object = json.loads(clean_response_text)
         except json.JSONDecodeError:
@@ -186,13 +187,12 @@ Tu respuesta debe ser **EXCLUSIVAMENTE el objeto JSON**. No incluyas texto intro
             "module_id": module.id,
             "content": content_object
         }
-
+    #Capturas de errores
     except ObjectDoesNotExist as e:
         return {"error": f"No se encontró el objeto en la base de datos: {str(e)}"}
-    except ValueError as e: # Captura el error de contenido ya generado o JSON inválido
+    except ValueError as e: 
         return {"error": str(e)}
     except Exception as e:
-        # Captura cualquier otro error inesperado
         return {"error": f"Ocurrió un error inesperado al generar contenido: {str(e)}"}
     
 def get_learning_module_by_id(module_id):
