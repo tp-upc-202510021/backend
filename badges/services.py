@@ -72,3 +72,26 @@ def notify_investment_winner_if_applicable(player_1_id: int, player_2_id: int, r
             "event": message
         }
     )
+
+def user_win_first_step(user_id: int):
+    try:
+        badge = Badge.objects.get(unlock_condition="complete_first_module")
+        if UserBadge.objects.filter(user_id=user_id, badge=badge).exists():
+            return
+        user_badge =create_user_badge(user_id, badge.id, "Completó su primer módulo exitosamente.")
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"user_{user_id}",            # mismo naming que uses al conectar
+            {
+                "type": "send_badge_notification",  # método que ejecutará el consumer
+                "data": {
+                    "kind": "badge",       # <- identificamos que es logro
+                    "badge_id": badge.id,
+                    "name": badge.name,
+                    "description": badge.description,
+                    "date_unlocked": user_badge.date_unlocked.isoformat(),
+                },
+            },
+        )
+    except ObjectDoesNotExist:
+        raise ValidationError("El badge 'El primer paso' no existe.")
