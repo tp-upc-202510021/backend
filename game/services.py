@@ -9,7 +9,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from badges.services import notify_winner_if_applicable
-from game.models import Game, LoanGameSession
+from game.models import Game, InvestmentGameSession, LoanGameSession
 from users.models import User
 from users.services import get_confirmed_friendships
 
@@ -317,3 +317,219 @@ def apply_exchange_event(base_buy: float,
         }
 
     return response
+
+def generate_investment_game():
+    """
+    Crea un caso práctico para un minijuego educativo enfocado en el tipo de cambio.
+    Devuelve un diccionario con la estructura del juego.
+    """
+    investment_game_prompt = """Genera un caso práctico para un minijuego educativo enfocado exclusivamente en **inversiones**.  
+La respuesta debe ser **SOLO el JSON y nada más**. Usa información clara, educativa y coherente con la realidad financiera del Perú a junio 2025.
+
+Estructura y significado de cada campo
+-------------------------------------
+
+1. `initial_capital_pen`  
+   • Decimal (> 0) con dos decimales.  
+   • Capital inicial del jugador en soles.
+
+2. `base_fx_rate`  
+   • Objeto con dos claves:  
+     – `buy`  → tipo de cambio compra PEN→USD (decimales).  
+     – `sell` → tipo de cambio venta PEN→USD (decimales, siempre < `buy`).  
+   • Punto de partida; se ajusta con los eventos de cada ronda.
+
+3. `rounds`  
+   • Arreglo de **exactamente 5** objetos, cada uno con:
+
+   a. `round`  
+      – Entero del 1 al 5 que identifica la ronda.  
+
+   b. `investment_duration_months`  
+      – Entero positivo (12, 18, 24, 36 …).  
+      – Todas las frecuencias de las opciones DEBEN dividir este valor sin residuo.
+
+   c. `options` (exactamente 3 por ronda)  
+      • `title`               → Nombre de la opción.  
+      • `description`         → Texto breve y pedagógico.  
+      • `expected_return_pct` → Decimal > 0 (rentabilidad anual base en %).  
+      • `volatility_pct`      → Decimal 0–100 (sensibilidad a eventos en %).  
+      • `risk_level`          → `"LOW"` | `"MEDIUM"` | `"HIGH"`.  
+      • `frequency`           → `"ANNUAL"` (12 m) | `"SEMI_ANNUAL"` (6 m) | `"QUARTERLY"` (3 m) | `"MONTHLY"` (1 m).  
+                               *Debe dividir exactamente `investment_duration_months`.*  
+      • `currency`            → `"PEN"` | `"USD"`.
+
+   d. `fx_event`  
+      • `probability_to_change`   → Entero 0–100 (probabilidad de que ocurra).  
+      • `type_of_change`          → `"positive"` (sube el USD) | `"negative"` (baja el USD).  
+      • `percentage_of_variation` → Decimal > 0 (magnitud absoluta en %).  
+      • `event_description`       → Cadena coherente con `type_of_change` y la coyuntura peruana.  
+      • **No incluyas** valores actuales de compra/venta aquí; se calculan a partir de `base_fx_rate`.
+
+Reglas obligatorias
+-------------------
+
+* Solo 5 rondas.  
+* `options` debe contener exactamente 3 elementos.  
+* Las frecuencias de cada opción deben ser divisores exactos de `investment_duration_months`.  
+* `volatility_pct` y `risk_level` deben ser coherentes con `expected_return_pct`.  
+* El JSON **no debe** incluir comentarios ni ningún texto explicativo fuera del objeto.
+
+Ejemplo de referencia (con marcadores – NO incluyas comentarios en la salida)
+-----------------------------------------------------------------------------
+
+```jsonc
+{
+  "initial_capital_pen": 12000.00,
+  "base_fx_rate": {
+    "buy": 3.87,
+    "sell": 3.84
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "investment_duration_months": 12,
+      "options": [
+        {
+          "title": "Depósito a Plazo 12 m",
+          "description": "Tasa fija garantizada durante 1 año.",
+          "expected_return_pct": 4.5,
+          "volatility_pct": 5,
+          "risk_level": "LOW",
+          "frequency": "ANNUAL",
+          "currency": "PEN"
+        },
+        {
+          "title": "Fondo Mutuo Mixto",
+          "description": "40 % bonos y 60 % acciones.",
+          "expected_return_pct": 8,
+          "volatility_pct": 25,
+          "risk_level": "MEDIUM",
+          "frequency": "MONTHLY",
+          "currency": "PEN"
+        },
+        {
+          "title": "Acción AAPL tokenizada",
+          "description": "Participación fraccionada en Apple.",
+          "expected_return_pct": 14,
+          "volatility_pct": 40,
+          "risk_level": "HIGH",
+          "frequency": "QUARTERLY",
+          "currency": "USD"
+        }
+      ],
+      "fx_event": {
+        "probability_to_change": 26,
+        "type_of_change": "positive",
+        "percentage_of_variation": 2,
+        "event_description": "Salida de capitales extranjeros"
+      }
+    }
+    // … repetir estructura hasta round 5
+  ]
+} """
+    # 1. Llamar a la API de Gemini para generar el contenido del juego
+    response = client.models.generate_content(
+            model="gemini-2.5-pro-preview-06-05", 
+            contents=investment_game_prompt,
+    )
+    text = response.text
+
+    # Extraer bloque JSON usando expresión regular (si viene entre ```json ... ```)
+    json_match = re.search(r"```(?:json)?(.*?)```", text, re.DOTALL)
+    if json_match:
+        json_str = json_match.group(1).strip()
+    else:
+        json_str = text.strip()
+
+    try:
+        loan_game_data = json.loads(json_str)
+        return loan_game_data
+    except json.JSONDecodeError as e:
+        return {"error": "Error parsing JSON", "raw": json_str, "details": str(e)}
+    
+def invite_user_to_investment_game(inviter: User, invited_user_id: int) :
+    friendships = get_confirmed_friendships(inviter)
+    friend_ids = [f.requester.id if f.receiver == inviter else f.receiver.id for f in friendships]
+    if invited_user_id not in friend_ids:
+        raise ValueError("El usuario no es tu amigo confirmado")
+
+    invited_user = User.objects.get(id=invited_user_id)
+
+    session = InvestmentGameSession.objects.create(
+        player_1=inviter,
+        player_2=invited_user,
+        status="waiting"
+    )
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_add)(f"user_{invited_user.id}", f"user_{invited_user.id}")
+
+    async_to_sync(channel_layer.group_send)(
+        f"user_{invited_user.id}",
+        {
+            "type": "game.invitation",
+            "message": f"{inviter.name} te ha invitado a un juego de inversiones.",
+            "session_id": session.id
+        }
+    )
+
+    return session
+def respond_to_investment_invitation(session_id: int, user: User, response: str) -> dict:
+    session = InvestmentGameSession.objects.get(id=session_id)
+
+    if session.player_2 != user:
+        raise PermissionError("No estás autorizado para responder esta invitación")
+
+    if session.status != 'waiting':
+        raise ValueError("Este juego ya fue aceptado o rechazado")
+
+    channel_layer = get_channel_layer()
+
+    if response == 'reject':
+        session.status = 'rejected'
+        session.save()
+
+        async_to_sync(channel_layer.group_send)(
+            f"user_{session.player_1.id}",
+            {
+                "type": "game.rejected",
+                "message": f"{user.name} rechazó tu invitación.",
+                "session_id": session.id
+            }
+        )
+        return {"message": "Invitación rechazada"}
+
+    elif response == 'accept':
+        game_data = generate_investment_game()
+        if "error" in game_data:
+            raise ValueError("Error al generar el juego con IA")
+
+        session.status = 'active'
+        session.game_data = game_data
+        session.save()
+
+        async_to_sync(channel_layer.group_send)(
+            f"user_{session.player_1.id}",
+            {
+                "type": "game.accepted",
+                "message": f"{user.name} aceptó tu invitación.",
+                "session_id": session.id,
+                "game_data": game_data
+            }
+        )
+        async_to_sync(channel_layer.group_send)(
+          f"user_{session.player_2.id}",
+          {
+              "type": "game.started",
+              "message": "Has aceptado el reto. El juego ha comenzado.",
+              "session_id": session.id,
+              "game_data": game_data
+          }
+      )
+        return {
+            "message": "Invitación aceptada. Juego iniciado.",
+            "session_id": session.id,
+            "game_data": game_data
+        }
+
+    raise ValueError("Respuesta inválida. Usa 'accept' o 'reject'")

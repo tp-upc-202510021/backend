@@ -60,5 +60,25 @@ class LoanGameRoundResult(models.Model):
         return f"Resultados Ronda {self.round_number} - Juego {self.session.id}"
     
 
+class InvestmentGameSession(models.Model):
+    STATUS_CHOICES = [
+        ('waiting', 'Waiting'),
+        ('active', 'Active'),
+        ('rejected', 'Rejected'),
+        ('finished', 'Finished')
+    ]
+
+    player_1 = models.ForeignKey(User, related_name='investment_games_as_creator', on_delete=models.CASCADE)
+    player_2 = models.ForeignKey(User, related_name='investment_games_as_invited', on_delete=models.CASCADE)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='waiting')
+    current_round = models.IntegerField(default=1)
+    game_data = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"InvestmentGameSession {self.id} [{self.player_1.username} vs {self.player_2.username}]"
+    
+
 
 

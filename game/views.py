@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services import apply_exchange_event, create_loan_game_investment, evaluate_rate_events, invite_user_to_loan_game, respond_to_loan_invitation, save_loan_game_result
+from .services import apply_exchange_event, create_loan_game_investment, evaluate_rate_events, generate_investment_game, invite_user_to_investment_game, invite_user_to_loan_game, respond_to_investment_invitation, respond_to_loan_invitation, save_loan_game_result
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -170,3 +170,41 @@ class ExchangeEventView(APIView):
         )
 
         return Response(result, status=status.HTTP_200_OK)
+    
+class InvestmentGameAIView(APIView):
+    def get(self, request):
+        result = generate_investment_game()
+        return Response(result)
+    
+class InviteUserToInvestmentGameView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        invited_user_id = request.data.get("invited_user_id")
+        if not invited_user_id:
+            return Response({"error": "Falta el ID del usuario invitado"}, status=400)
+
+        try:
+            session = invite_user_to_investment_game(request.user, invited_user_id)
+            return Response({
+                "message": "Invitación enviada.",
+                "session_id": session.id
+            }, status=201)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+        
+class RespondToInvestmentGameView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        session_id = request.data.get("session_id")
+        response = request.data.get("response")  # "accept" o "reject"
+
+        if not session_id or response not in ["accept", "reject"]:
+            return Response({"error": "Faltan datos o la respuesta es inválida."}, status=400)
+
+        try:
+            result = respond_to_investment_invitation(session_id, request.user, response)
+            return Response(result)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
