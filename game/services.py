@@ -8,7 +8,7 @@ from typing import Tuple, Dict
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-from badges.services import notify_winner_if_applicable
+from badges.services import notify_investment_winner_if_applicable, notify_winner_if_applicable
 from game.models import Game, InvestmentGameSession, LoanGameSession
 from users.models import User
 from users.services import get_confirmed_friendships
@@ -533,3 +533,20 @@ def respond_to_investment_invitation(session_id: int, user: User, response: str)
         }
 
     raise ValueError("Respuesta inválida. Usa 'accept' o 'reject'")
+
+def save_investment_game_result(player_1_id: int, player_2_id: int, player_1_total_return: float, player_2_total_return: float):
+    try:
+        player_1 = User.objects.get(id=player_1_id)
+        player_2 = User.objects.get(id=player_2_id)
+
+        game = Game.objects.create(
+            first_user=player_1,
+            second_user=player_2,
+            type="investment",
+            first_user_result=player_1_total_return,
+            second_user_result=player_2_total_return
+        )
+        notify_investment_winner_if_applicable(player_1.id, player_2.id, player_1_total_return, player_2_total_return)
+        return game
+    except User.DoesNotExist:
+        raise ValueError("Uno de los usuarios no existe.")

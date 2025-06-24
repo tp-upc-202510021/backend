@@ -51,3 +51,24 @@ def notify_winner_if_applicable(player_1_id: int, player_2_id: int, result_1: fl
             "event": message
         }
     )
+def notify_investment_winner_if_applicable(player_1_id: int, player_2_id: int, result_1: float, result_2: float):
+    if result_1 == result_2:
+        return 
+
+    winner_id = player_1_id if result_1 > result_2 else player_2_id
+    winner = User.objects.get(id=winner_id)
+
+    message = {
+        "type": "badge.unlocked",
+        "title": "¡Felicidades!",
+        "body": "Ganaste esta partida obteniendo el mayor retorno de inversión."
+    }
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"user_{winner_id}",
+        {
+            "type": "send_badge_notification",
+            "event": message
+        }
+    )

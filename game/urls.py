@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import ExchangeEventView, InvestmentGameAIView, InviteUserToInvestmentGameView, LoanGameAIView, RateEventView, RespondToGameView, RespondToInvestmentGameView, SaveLoanGameResultView, invite_to_game_view
+from .views import ExchangeEventView, InvestmentGameAIView, InviteUserToInvestmentGameView, LoanGameAIView, RateEventView, RespondToGameView, RespondToInvestmentGameView, SaveInvestmentGameResultView, SaveLoanGameResultView, invite_to_game_view
 
 urlpatterns = [
     path('generate-loan-game/ai/', LoanGameAIView.as_view(), name='loan-game-ai'),
@@ -12,4 +12,5 @@ urlpatterns = [
     path('generate-investment-game/', InvestmentGameAIView.as_view(), name='generate-investment-game'),
     path('invite-user-to-investment-game/', InviteUserToInvestmentGameView.as_view(),name='invite-user-to-investment-game'),
     path('respond-to-investment-invitation/', RespondToInvestmentGameView.as_view(), name='respond-to-investment-invitation'),
+    path('save-investment-game-result/', SaveInvestmentGameResultView.as_view(), name='save-investment-game-result'),
 ]
