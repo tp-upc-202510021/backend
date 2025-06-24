@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services import create_loan_game_investment, evaluate_rate_events, invite_user_to_loan_game, respond_to_loan_invitation, save_loan_game_result
+from .services import apply_exchange_event, create_loan_game_investment, evaluate_rate_events, invite_user_to_loan_game, respond_to_loan_invitation, save_loan_game_result
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -121,3 +121,52 @@ class SaveLoanGameResultView(APIView):
             return Response({"error": str(e)}, status=404)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+        
+class ExchangeEventView(APIView):
+    """
+    Recibe la configuración de la variación cambiaria enviada por el frontend
+    y devuelve la respuesta generada por el servicio `apply_exchange_event`.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+
+        required_fields = [
+            "current_change_to_buy",
+            "current_change_to_sell",
+            "probability_to_change",
+            "type_of_change",
+            "percentage_of_variation",
+            "event"
+        ]
+        missing = [f for f in required_fields if f not in data]
+        if missing:
+            return Response(
+                {"detail": f"Faltan campos requeridos: {', '.join(missing)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            base_buy = float(data["current_change_to_buy"])
+            base_sell = float(data["current_change_to_sell"])
+            probability = int(data["probability_to_change"])
+            change_type = str(data["type_of_change"]).lower()
+            variation_pct = float(data["percentage_of_variation"])
+            event_name = str(data["event"])
+        except (ValueError, TypeError):
+            return Response(
+                {"detail": "Tipos de dato inválidos en la carga útil."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        result = apply_exchange_event(
+            base_buy=base_buy,
+            base_sell=base_sell,
+            probability=probability,
+            change_type=change_type,
+            variation_pct=variation_pct,
+            event_name=event_name,
+        )
+
+        return Response(result, status=status.HTTP_200_OK)

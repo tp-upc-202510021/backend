@@ -1,3 +1,4 @@
+from decimal import Decimal, ROUND_HALF_UP 
 import json
 import re
 from google import genai
@@ -265,3 +266,54 @@ def save_loan_game_result(player_1_id: int, player_2_id: int, player_1_total_int
         return game
     except User.DoesNotExist:
         raise ValueError("Uno de los usuarios no existe.")
+    
+def apply_exchange_event(base_buy: float,
+                         base_sell: float,
+                         probability: int,
+                         change_type: str,
+                         variation_pct: float,
+                         event_name: str) -> dict:
+    """
+    Calcula la ocurrencia y efecto de un evento cambiario.
+
+    Args:
+        base_buy: TC compra inicial.
+        base_sell: TC venta inicial.
+        probability: 0-100 (%).
+        change_type: "positive" | "negative".
+        variation_pct: porcentaje de variación.
+        event_name: descripción narrativa.
+
+    Returns:
+        dict listo para serializar a JSON.
+    """
+    occurred = random.uniform(0, 100) < probability
+
+    response = {
+        "base_rate": {
+            "buy": base_buy,
+            "sell": base_sell
+        },
+        "event": {
+            "occurred": occurred,
+            "description": event_name,
+            "type": change_type,
+            "variation_pct": variation_pct
+        }
+    }
+
+    if occurred:
+        sign = 1 if change_type == "positive" else -1
+        factor = 1 + sign * (variation_pct / 100)
+
+        new_buy = Decimal(base_buy * factor).quantize(Decimal("0.001"),
+                                                      rounding=ROUND_HALF_UP)
+        new_sell = Decimal(base_sell * factor).quantize(Decimal("0.0001"),
+                                                        rounding=ROUND_HALF_UP)
+
+        response["event"]["new_rate"] = {
+            "buy": float(new_buy),
+            "sell": float(new_sell)
+        }
+
+    return response
