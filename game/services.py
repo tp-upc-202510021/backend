@@ -184,7 +184,8 @@ def invite_user_to_loan_game(inviter: User, invited_user_id: int) -> LoanGameSes
         {
             "type": "game.invitation",
             "message": f"{inviter.name} te ha invitado a un juego de préstamos.",
-            "session_id": session.id
+            "session_id": session.id,
+            "game_type": "loan"
         }
     )
 
@@ -210,7 +211,8 @@ def respond_to_loan_invitation(session_id: int, user: User, response: str) -> di
             {
                 "type": "game.rejected",
                 "message": f"{user.name} rechazó tu invitación.",
-                "session_id": session.id
+                "session_id": session.id,
+                "game_type": "loan"
             }
         )
         return {"message": "Invitación rechazada"}
@@ -230,7 +232,8 @@ def respond_to_loan_invitation(session_id: int, user: User, response: str) -> di
                 "type": "game.accepted",
                 "message": f"{user.name} aceptó tu invitación.",
                 "session_id": session.id,
-                "game_data": game_data
+                "game_data": game_data,
+                "game_type": "loan"
             }
         )
         async_to_sync(channel_layer.group_send)(
@@ -239,13 +242,15 @@ def respond_to_loan_invitation(session_id: int, user: User, response: str) -> di
               "type": "game.started",
               "message": "Has aceptado el reto. El juego ha comenzado.",
               "session_id": session.id,
-              "game_data": game_data
+              "game_data": game_data,
+              "game_type": "loan"
           }
       )
         return {
             "message": "Invitación aceptada. Juego iniciado.",
             "session_id": session.id,
-            "game_data": game_data
+            "game_data": game_data,
+            "game_type": "loan"
         }
 
     raise ValueError("Respuesta inválida. Usa 'accept' o 'reject'")
@@ -469,7 +474,8 @@ def invite_user_to_investment_game(inviter: User, invited_user_id: int) :
         {
             "type": "game.invitation",
             "message": f"{inviter.name} te ha invitado a un juego de inversiones.",
-            "session_id": session.id
+            "session_id": session.id,
+            "game_type": "investment"
         }
     )
 
@@ -494,7 +500,8 @@ def respond_to_investment_invitation(session_id: int, user: User, response: str)
             {
                 "type": "game.rejected",
                 "message": f"{user.name} rechazó tu invitación.",
-                "session_id": session.id
+                "session_id": session.id,
+                "game_type": "investment"
             }
         )
         return {"message": "Invitación rechazada"}
@@ -514,7 +521,8 @@ def respond_to_investment_invitation(session_id: int, user: User, response: str)
                 "type": "game.accepted",
                 "message": f"{user.name} aceptó tu invitación.",
                 "session_id": session.id,
-                "game_data": game_data
+                "game_data": game_data,
+                "game_type": "investment"
             }
         )
         async_to_sync(channel_layer.group_send)(
@@ -523,13 +531,15 @@ def respond_to_investment_invitation(session_id: int, user: User, response: str)
               "type": "game.started",
               "message": "Has aceptado el reto. El juego ha comenzado.",
               "session_id": session.id,
-              "game_data": game_data
+              "game_data": game_data,
+              "game_type": "investment"
           }
       )
         return {
             "message": "Invitación aceptada. Juego iniciado.",
             "session_id": session.id,
-            "game_data": game_data
+            "game_data": game_data,
+            "game_type": "investment"
         }
 
     raise ValueError("Respuesta inválida. Usa 'accept' o 'reject'")
