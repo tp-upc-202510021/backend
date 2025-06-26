@@ -1,7 +1,7 @@
 import json
 import re
 from decouple import config
-from badges.services import user_win_first_step
+from badges.services import check_user_completed_all_modules, user_win_first_step
 from users.models import User
 from learningmodules.models import LearningModule
 from .models import Quiz, Question, Answer, QuizResult
@@ -123,6 +123,7 @@ def create_quiz_result(user, quiz_id, score):
         module.is_approved=True
         module.save()
         user_win_first_step(user.id)
+        check_user_completed_all_modules(user.id)
 
     return {
         "quiz_result_id": result.id,

@@ -211,3 +211,23 @@ def get_learning_module_by_id(module_id):
         "is_approved": module.is_approved,
         "content": module.content,
     }
+
+def check_all_paths_completed(user_id):
+    """
+    Verifica si un usuario ha completado todos los módulos de aprendizaje en todas sus rutas.
+    
+    Args:
+        user_id (int): El ID del usuario a verificar.
+    
+    Returns:
+        bool: True si el usuario ha completado todos los módulos, False en caso contrario.
+    """
+    user = User.objects.get(id=user_id)
+    learning_paths = user.learning_paths.all()
+
+    for path in learning_paths:
+        modules = path.learning_modules.all()
+        if not all(module.is_approved for module in modules):
+            return False
+
+    return True

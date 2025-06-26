@@ -30,6 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=50)
     age = models.PositiveIntegerField()
+    friend_game_wins = models.PositiveIntegerField(default=0)
 
     PREFERENCE_CHOICES = [
         ('loans', 'Loans'),

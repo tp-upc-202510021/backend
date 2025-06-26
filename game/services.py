@@ -259,7 +259,7 @@ def save_loan_game_result(player_1_id: int, player_2_id: int, player_1_total_int
     try:
         player_1 = User.objects.get(id=player_1_id)
         player_2 = User.objects.get(id=player_2_id)
-
+        
         game = Game.objects.create(
             first_user=player_1,
             second_user=player_2,
@@ -268,6 +268,7 @@ def save_loan_game_result(player_1_id: int, player_2_id: int, player_1_total_int
             second_user_result=player_2_total_interest
         )
         notify_winner_if_applicable(player_1.id, player_2.id, player_1_total_interest, player_2_total_interest)
+
         return game
     except User.DoesNotExist:
         raise ValueError("Uno de los usuarios no existe.")
